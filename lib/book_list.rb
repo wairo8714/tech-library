@@ -7,7 +7,7 @@ class BookList
         @books = books
     end
 
-    def add_book(book)
+    def add(book)
         @books << book
     end
 
