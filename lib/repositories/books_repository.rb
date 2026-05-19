@@ -13,7 +13,7 @@ class BooksRepository
 
         loaded_books = begin
             JSON.parse(raw).map do |h|
-                Book.new(id: h["id"], title: h["title"], authors: h["authors"], genres: h["genres"], location: h["location"])
+                Book.new(id: h["id"], title: h["title"], authors: h["authors"], genres: h["genres"])
             end
         rescue JSON::ParserError
             warn "books.json の形式が正しくありません。空のリストで続行します。"
@@ -26,7 +26,7 @@ class BooksRepository
     def self.save(books_list)
         array = []
         books_list.books.each do |book|
-            array << { id: book.id, title: book.title, authors: book.authors, genres: book.genres, location: book.location}
+            array << { id: book.id, title: book.title, authors: book.authors, genres: book.genres}
         end
         File.write(PATH, JSON.generate(array))
     end
