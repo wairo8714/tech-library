@@ -3,16 +3,16 @@
 ## 目的
 
 実装前にアプリで扱うドメインと責務を整理する。
-Book / managed_location / Checkout の関係を明確にし、モデルの責務が混ざらないようにする。
+Book / Location / BookPlacement / Checkout の関係を明確にし、モデルの責務が混ざらないようにする。
 
 ## 現状の課題と方針
 
-Book に location を持たせると、Book が「本そのもの」と「物理的な1冊の所在」の両方を表してしまう。
+Book に location を持たせると、Book が「本そのもの」と「場所」の両方を表してしまう。
 
-ここで扱う location は「今どこにあるか」ではなく、「どこが管理しているか（野村 or アネックス）」を表す固定属性とする。
-そのため、現在誰が本を所有しているかは Book には持たせず、Checkout が user_id と book_id を持つことで管理する。
+場所は本そのものの属性ではなく、施設・部屋・本棚などに変化しうる別の概念である。
+そのため、場所は Location として表し、Book と Location の関係は BookPlacement として表す。
 
-location は引き続き Book モデルの管理対象とし、現在地ではなく管理拠点であることが分かるように、名称を managed_location へ変更する。
+現在誰が本を所有しているかは Book には持たせず、Checkout が user_id と book_id を持つことで管理する。
 
 ## フローチャート図
 
@@ -31,12 +31,16 @@ flowchart TD
     subgraph Domain["Domain Model"]
         BookList["BookList"]
         Book["Book"]
+        Location["Location"]
+        BookPlacement["BookPlacement"]
         User["User"]
         Checkout["Checkout"]
     end
 
     subgraph Infrastructure["Infrastructure / Repository"]
         BooksRepository["BooksRepository"]
+        LocationsRepository["LocationsRepository"]
+        BookPlacementsRepository["BookPlacementsRepository"]
         UserRepository["UserRepository"]
         CheckoutRepository["CheckoutRepository"]
         SessionRepository["SessionRepository"]
@@ -44,6 +48,8 @@ flowchart TD
 
     subgraph DataStore["Data Store / JSON"]
         BooksJson["books.json"]
+        LocationsJson["locations.json"]
+        BookPlacementsJson["book_placements.json"]
         UsersJson["users.json"]
         CheckoutsJson["checkouts.json"]
         SessionJson["session.json"]
@@ -59,6 +65,8 @@ flowchart TD
 
 ```mermaid
 erDiagram
+    BOOK ||--o{ BOOK_PLACEMENT : placed_as
+    LOCATION ||--o{ BOOK_PLACEMENT : has
     USER ||--o{ CHECKOUT : borrows
     BOOK ||--o{ CHECKOUT : checked_out_as
 
@@ -67,7 +75,17 @@ erDiagram
         string title
         string[] authors
         string[] genres
-        string managed_location
+    }
+
+    LOCATION {
+        int id
+        string name
+    }
+
+    BOOK_PLACEMENT {
+        int placement_id
+        int book_id
+        int location_id
     }
 
     USER {
@@ -111,10 +129,42 @@ Book の集合操作をまとめる。
 - title
 - authors
 - genres
-- managed_location
 
 持たないもの:
 
+- 場所
+- 現在の所有者
+- 貸出状態
+- 保存形式
+
+### Location
+
+場所を表す。
+
+持つもの:
+
+- id
+- name
+
+持たないもの:
+
+- 本の情報
+- 貸出状態
+- 保存形式
+
+### BookPlacement
+
+Book と Location の関係を表す。
+
+持つもの:
+
+- placement_id
+- book_id
+- location_id
+
+持たないもの:
+
+- 本の情報
 - 現在の所有者
 - 貸出状態
 - 保存形式

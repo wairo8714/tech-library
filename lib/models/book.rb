@@ -1,12 +1,11 @@
 class Book
 
-    attr_accessor :id, :title, :authors, :genres, :location
+    attr_reader :id, :title, :authors, :genres
 
-    def initialize(id:, title:, authors:, genres:, location:)
+    def initialize(id:, title:, authors:, genres:)
         @id = id
         @title = title
         @authors = authors
         @genres = genres
-        @location = location
     end
 end
