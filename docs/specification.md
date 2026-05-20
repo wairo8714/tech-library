@@ -175,6 +175,8 @@ flowchart LR
 #### 備考
 
 - Book と Location の関係を表す
+- ドメインモデル上は Book と Location を持つ
+- `book_placements.json` には重複保存を避けるため `book_id` / `location_id` を保存する
 - 場所の構造が変わっても Book には影響させない
 
 ### User

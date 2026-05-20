@@ -159,12 +159,11 @@ Book と Location の関係を表す。
 持つもの:
 
 - placement_id
-- book_id
-- location_id
+- book
+- location
 
 持たないもの:
 
-- 本の情報
 - 現在の所有者
 - 貸出状態
 - 保存形式

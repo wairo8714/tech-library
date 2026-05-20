@@ -1,9 +1,9 @@
 class BookPlacement
-    attr_reader :placement_id, :book_id, :location_id
+    attr_reader :placement_id, :book, :location
 
-    def initialize(placement_id:, book_id:, location_id:)
+    def initialize(placement_id:, book:, location:)
         @placement_id = placement_id
-        @book_id = book_id
-        @location_id = location_id
+        @book = book
+        @location = location
     end
 end
