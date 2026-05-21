@@ -1,8 +1,8 @@
 require "json"
 require_relative "../models/book"
-require_relative "../book_list"
+require_relative "../models/book_list"
 
-class BooksRepository
+class BookListRepository
     PATH = File.expand_path("../../books.json", __dir__)
 
     def self.get

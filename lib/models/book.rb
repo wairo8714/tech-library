@@ -8,4 +8,17 @@ class Book
         @authors = authors
         @genres = genres
     end
+
+    def attributes
+        {
+            id: id,
+            title: title,
+            authors: authors,
+            genres: genres
+        }
+    end
+
+    def same_as?(other)
+        id == other.id
+    end
 end

@@ -6,4 +6,16 @@ class BookPlacement
         @book = book
         @location = location
     end
+
+    def for_book?(book)
+        @book.same_as?(book)
+    end
+
+    def attributes
+        book.attributes.merge(location: location.name)
+    end
+
+    def location_name
+        location.name
+    end
 end

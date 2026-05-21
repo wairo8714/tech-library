@@ -35,6 +35,28 @@ task.done
 - ドメインクラス（`Task` / `TodoList`）は、永続化や表示の存在を知らない。
 - 「お願い」を投げるだけで、相手の中身（インスタンス変数、内部メソッド、保存形式）には触らない。
 
+## レイヤードアーキテクチャ
+
+このプロジェクトでは、以下の依存方向を順守すること。
+
+```text
+Interface 層 → Usecase 層 → Domain 層
+                         ↘ Infrastructure 層 → Domain 層
+```
+
+- Interface 層（`app.rb`）は Usecase 層（Service）に依存する。
+- Usecase 層（Service）は Domain 層と Infrastructure 層（Repository）に依存する。
+- Infrastructure 層（Repository）は Domain 層に依存する。
+- Domain 層（Model）は他のどの層にも依存しない。
+
+各層は、与えられた責務以上の機能を持たないこと。
+また、他の層の内部都合を知らずに動けること。
+
+- Interface 層は、入力の解釈、表示文言、exit code、例外のユーザ向け翻訳だけを持つ。
+- Usecase 層は、ユースケースの段取り、Repository 呼び出し、Domain 操作の組み立てだけを持つ。
+- Domain 層は、業務概念の状態と振る舞いだけを持つ。表示、永続化、CLI 入力形式を知らない。
+- Infrastructure 層は、保存／復元の具体実装だけを持つ。CLI 表示やユースケースの段取りを知らない。
+
 ## このプロジェクトでの役割分担
 
 | ファイル | 一言で | 持って良いもの |
