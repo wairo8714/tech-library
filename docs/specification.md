@@ -121,7 +121,7 @@ flowchart LR
 | ---------------- | ---------------- |
 | `books.json`           | 書籍情報を管理する        |
 | `locations.json`       | 場所情報を管理する        |
-| `book_placements.json` | 本と場所の関係を管理する     |
+| `book_shelves.json`    | 場所ごとの本棚情報を管理する |
 | `users.json`           | 利用者情報を管理する       |
 | `checkouts.json`       | 貸出情報を管理する        |
 | `session.json`         | ログイン中の利用者情報を管理する |
@@ -148,6 +148,7 @@ flowchart LR
 - 貸出状況は `checkouts.json` を参照して判定する
 - 場所は本そのものの属性ではないため `books.json` には保存しない
 - 貸出中に誰が所持しているかは、未返却の `Checkout` の `user_id` から判定する
+- タイトル、著者、ジャンル、書籍IDを対象にキーワード一致を判定する
 
 ### Location
 
@@ -159,26 +160,30 @@ flowchart LR
 | `id`   | `int`    | 場所ID 主キー |
 | `name` | `string` | 場所名     |
 
+#### 備考
 
-### BookPlacement
-
-どの本がどの場所に属しているかを管理する。
+- 場所名を対象にキーワード一致を判定する
 
 
-| 項目            | 型     | 説明        |
-| ------------- | ----- | --------- |
-| `placement_id` | `int` | 主キー       |
-| `book_id`     | `int` | 書籍ID。外部キー |
-| `location_id` | `int` | 場所ID。外部キー |
+### BookShelf
+
+どの場所にどの本が置かれているかを管理する。
+
+
+| 項目            | 型           | 説明              |
+| ------------- | ------------ | ----------------- |
+| `location_id` | `int`        | 場所ID。外部キー   |
+| `books`       | `array[int]` | 書籍IDの配列       |
 
 
 #### 備考
 
-- Book と Location の関係を表す
-- ドメインモデル上は Book と Location を持つ
-- `book_placements.json` には重複保存を避けるため `book_id` / `location_id` を保存する
-- 登録済みの本は必ず 1 件の BookPlacement を持つ
+- Location と、その場所に置かれた複数の Book を表す
+- ドメインモデル上は Location と複数の Book を持つ
+- `book_shelves.json` には重複保存を避けるため `location_id` / `books` を保存する
+- 登録済みの本は必ず 1 つの BookShelf に属する
 - 場所の構造が変わっても Book には影響させない
+- 検索では Book の情報または Location の名前に一致した本を返す
 
 ### User
 
@@ -303,7 +308,7 @@ ruby app.rb add
 - タイトル、著者、ジャンル、保管場所の番号を対話形式で受け取る
 - 作者・ジャンルはカンマ区切りで受け取り、配列として保存する
 - 新しい保管場所を選んだ場合は、入力された保管場所名を Location として保存する
-- Book と Location の関係を BookPlacement として保存する
+- Book を Location に対応する BookShelf へ配置して保存する
 
 ### 検索
 

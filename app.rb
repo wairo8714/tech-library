@@ -1,10 +1,10 @@
 require_relative "lib/services/book_service"
 
-def print_books_with_locations(books_with_locations)
-    books_with_locations.each.with_index(1) do |book_with_location, index|
+def print_books(book_attributes_list)
+    book_attributes_list.each.with_index(1) do |book_attributes, index|
         puts ""
         puts "--- #{index}件目 ---"
-        book_with_location.attributes.each do |name, value|
+        book_attributes.each do |name, value|
             value = value.join(",") if value.is_a?(Array)
             puts "#{name}: #{value}"
         end
@@ -46,24 +46,24 @@ begin
    
         puts "登録が完了しました"
     when "list"
-        books_with_locations = book_service.list
+        book_attributes_list = book_service.list
 
-        if books_with_locations.empty?
+        if book_attributes_list.empty?
             puts "登録されている本はありません"
         else
-            puts "登録されている本が#{books_with_locations.size}件あります"
-            print_books_with_locations(books_with_locations)
+            puts "登録されている本が#{book_attributes_list.size}件あります"
+            print_books(book_attributes_list)
         end
     when "find"
         puts "検索キーワードを入力してください(複数条件はカンマ区切り)"
         keywords = STDIN.gets.chomp.strip
-        books_with_locations = book_service.find(keyword_text: keywords)
+        book_attributes_list = book_service.find(keyword_text: keywords)
 
-        if books_with_locations.empty?
-            puts "該当する本はありません"
+        if book_attributes_list.empty?
+            raise BookNotFound
         else
-            puts "検索結果が#{books_with_locations.size}件見つかりました"
-            print_books_with_locations(books_with_locations)
+            puts "検索結果が#{book_attributes_list.size}件見つかりました"
+            print_books(book_attributes_list)
         end
     else
         puts "使い方: ruby app.rb add | find | list"
@@ -74,8 +74,5 @@ rescue BookNotFound => e
     exit 1
 rescue LocationSelectionError
     warn "保管場所の入力が正しくありません"
-    exit 1
-rescue BookPlacementNotFound
-    warn "本の保管場所情報が見つかりません"
     exit 1
 end

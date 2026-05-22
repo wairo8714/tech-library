@@ -1,11 +1,11 @@
 require_relative "../repositories/book_list_repository"
 require_relative "../repositories/locations_repository"
-require_relative "../repositories/book_placements_repository"
+require_relative "../repositories/book_shelves_repository"
 require_relative "../models/book"
 require_relative "../models/location"
 require_relative "../models/location_list"
-require_relative "../models/book_placement"
-require_relative "../models/book_placement_list"
+require_relative "../models/book_shelf"
+require_relative "../models/book_shelves"
 require_relative "../models/book_list"
 
 class BookService
@@ -25,9 +25,9 @@ class BookService
         book_list = BookListRepository.get
         book = book_list.register(book_registration_info)
         BookListRepository.save(book_list)
-        book_placement_list = book_placement_list_for(book_list, location_list)
-        book_placement_list.place(book, location)
-        BookPlacementsRepository.save(book_placement_list)
+        book_shelves = book_shelves_for(book_list, location_list)
+        book_shelves.place(book, location)
+        BookShelvesRepository.save(book_shelves)
 
         book
     end
@@ -35,31 +35,24 @@ class BookService
     def list
         book_list = BookListRepository.get
         location_list = LocationsRepository.all
-        book_placement_list = book_placement_list_for(book_list, location_list)
+        book_shelves = book_shelves_for(book_list, location_list)
 
-        books_with_locations_for(book_list.books, book_placement_list)
+        book_shelves.book_attributes
     end
 
     def find(keyword_text:)
         keywords = split_values(keyword_text)
         book_list = BookListRepository.get
         location_list = LocationsRepository.all
-        book_placement_list = book_placement_list_for(book_list, location_list)
-        books = book_list.find(keywords: keywords) do |book|
-            [book_placement_list.placement_for(book).location_name]
-        end
+        book_shelves = book_shelves_for(book_list, location_list)
 
-        books_with_locations_for(books, book_placement_list)
+        book_shelves.search_attributes(keywords)
     end
 
     private
 
-    def books_with_locations_for(books, book_placement_list)
-        book_placement_list.placements_for(books)
-    end
-
-    def book_placement_list_for(book_list, location_list)
-        BookPlacementsRepository.all(
+    def book_shelves_for(book_list, location_list)
+        BookShelvesRepository.all(
             book_list: book_list,
             location_list: location_list
         )

@@ -25,15 +25,9 @@ class BookList
     end
 
     def find(keywords:)
-        @books.select do |book|
-            values = searchable_values_for(book)
-            values += yield(book) if block_given? # 検索結果に保管場所を追加する
-            keywords.all? do |keyword|
-                values.any? { |value| value.include?(keyword) }
-            end
-        end
+        @books.select { |book| book.matches?(keywords) }
     end
-
+        
     def find_by_id(id)
         @books.find { |book| book.id == id }
     end
@@ -42,10 +36,6 @@ class BookList
 
     def next_id
         @books.empty? ? 1: @books.map(&:id).max + 1
-    end
-
-    def searchable_values_for(book)
-        book.attributes.values.flatten.map(&:to_s)
     end
 
     def split_values(values)

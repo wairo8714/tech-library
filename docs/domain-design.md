@@ -3,14 +3,14 @@
 ## 目的
 
 実装前にアプリで扱うドメインと責務を整理する。
-Book / Location / BookPlacement / Checkout の関係を明確にし、モデルの責務が混ざらないようにする。
+Book / Location / BookShelf / Checkout の関係を明確にし、モデルの責務が混ざらないようにする。
 
 ## 現状の課題と方針
 
 Book に location を持たせると、Book が「本そのもの」と「場所」の両方を表してしまう。
 
 場所は本そのものの属性ではなく、施設・部屋・本棚などに変化しうる別の概念である。
-そのため、場所は Location として表し、Book と Location の関係は BookPlacement として表す。
+そのため、場所は Location として表し、特定の Location に置かれた複数の Book は BookShelf として表す。
 
 現在誰が本を所有しているかは Book には持たせず、Checkout が user_id と book_id を持つことで管理する。
 
@@ -33,8 +33,8 @@ flowchart TD
         Book["Book"]
         Location["Location"]
         LocationList["LocationList"]
-        BookPlacement["BookPlacement"]
-        BookPlacementList["BookPlacementList"]
+        BookShelf["BookShelf"]
+        BookShelves["BookShelves"]
         User["User"]
         Checkout["Checkout"]
     end
@@ -42,7 +42,7 @@ flowchart TD
     subgraph Infrastructure["Infrastructure / Repository"]
         BookListRepository["BookListRepository"]
         LocationsRepository["LocationsRepository"]
-        BookPlacementsRepository["BookPlacementsRepository"]
+        BookShelvesRepository["BookShelvesRepository"]
         UserRepository["UserRepository"]
         CheckoutRepository["CheckoutRepository"]
         SessionRepository["SessionRepository"]
@@ -51,7 +51,7 @@ flowchart TD
     subgraph DataStore["Data Store / JSON"]
         BooksJson["books.json"]
         LocationsJson["locations.json"]
-        BookPlacementsJson["book_placements.json"]
+        BookShelvesJson["book_shelves.json"]
         UsersJson["users.json"]
         CheckoutsJson["checkouts.json"]
         SessionJson["session.json"]
@@ -67,8 +67,8 @@ flowchart TD
 
 ```mermaid
 erDiagram
-    BOOK ||--o{ BOOK_PLACEMENT : placed_as
-    LOCATION ||--o{ BOOK_PLACEMENT : has
+    LOCATION ||--o{ BOOK_SHELF : has
+    BOOK_SHELF ||--o{ BOOK : contains
     USER ||--o{ CHECKOUT : borrows
     BOOK ||--o{ CHECKOUT : checked_out_as
 
@@ -84,10 +84,9 @@ erDiagram
         string name
     }
 
-    BOOK_PLACEMENT {
-        int placement_id
-        int book_id
+    BOOK_SHELF {
         int location_id
+        int[] book_ids
     }
 
     USER {
@@ -122,10 +121,10 @@ public に持つもの:
 役割:
 
 - Repository から必要なデータを取得する
-- BookList / LocationList / BookPlacementList に集合操作を依頼する
+- BookList / LocationList / BookShelves に集合操作を依頼する
 - LocationList に登録先 Location の解決を依頼する
 - BookList に Book の登録を依頼する
-- BookPlacementList に Book と Location の配置登録を依頼する
+- BookShelves に Book と Location の配置登録を依頼する
 - CLI が表示に使うデータを返す
 - CLI から受け取った入力値をユースケースとして解釈する
 
@@ -133,7 +132,7 @@ public に持つもの:
 
 - JSON の保存形式の詳細
 - Book 自身の内部状態変更
-- Location や BookPlacement の集合操作そのもの
+- Location や BookShelves の集合操作そのもの
 - CLI の表示文言
 
 ## Repository の責務
@@ -145,7 +144,7 @@ public に持つもの:
 持たないもの:
 
 - Location の復元
-- BookPlacement の復元
+- BookShelf の復元
 - CLI の表示文言
 
 ### LocationsRepository
@@ -155,13 +154,13 @@ public に持つもの:
 持たないもの:
 
 - Book の復元
-- BookPlacement の復元
+- BookShelf の復元
 - CLI の表示文言
 
-### BookPlacementsRepository
+### BookShelvesRepository
 
-`book_placements.json` の保存／復元を担当し、`BookPlacementList` を返す。
-`book_id` / `location_id` から `Book` / `Location` を解決するために、Usecase 層から渡された `BookList` / `LocationList` を使う。
+`book_shelves.json` の保存／復元を担当し、`BookShelves` を返す。
+`location_id` / `books` に含まれる book_id から `Location` / `Book` を解決するために、Usecase 層から渡された `BookList` / `LocationList` を使う。
 
 持たないもの:
 
@@ -200,6 +199,7 @@ Book の集合操作をまとめる。
 - authors
 - genres
 - attributes
+- キーワードに一致するかの判定
 
 持たないもの:
 
@@ -216,6 +216,7 @@ Book の集合操作をまとめる。
 
 - id
 - name
+- キーワードに一致するかの判定
 
 持たないもの:
 
@@ -241,21 +242,23 @@ Location の集合操作をまとめる。
 持たないもの:
 
 - 本の情報
-- BookPlacement の情報
+- BookShelf の情報
 - 保存形式
 - 表示結果全体の整形
 
-### BookPlacement
+### BookShelf
 
-Book と Location の関係を表す。
+特定の Location に置かれた複数の Book を表す。
 
 持つもの:
 
-- placement_id
-- book
 - location
-- attributes
-- location_name
+- books
+- Book の追加
+- Book の検索
+- Location 名を含めた検索
+- 場所付きの Book 表示データ
+- Repository が保存に使う構造化データ
 
 持たないもの:
 
@@ -263,17 +266,18 @@ Book と Location の関係を表す。
 - 貸出状態
 - 保存形式
 
-### BookPlacementList
+### BookShelves
 
-BookPlacement の集合操作をまとめる。
+BookShelf の集合操作をまとめる。
 
 持つもの:
 
-- book_placements
-- BookPlacement の配置登録
-- BookPlacement 登録時の ID 採番
-- Book に対応する BookPlacement を取得する処理
-- 複数の Book に対応する BookPlacement を取得する処理
+- book_shelves
+- Book の配置登録
+- 場所に対応する BookShelf の検索または作成
+- 複数の BookShelf から表示用データを集める処理
+- 複数の BookShelf から検索結果を集める処理
+- Repository が保存に使う構造化データ
 
 持たないもの:
 
